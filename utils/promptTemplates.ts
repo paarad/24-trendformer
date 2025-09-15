@@ -11,7 +11,7 @@ export const toneSystemPrompts: Record<Tone, string> = {
 
 export type ThreadOutput = {
 	title: string;
-	segments: string[]; // 6-10 tweet segments
+	segments: string[]; // 5-8 tweet segments
 	cta?: string;
 	quoteIdea?: string;
 };
@@ -30,7 +30,8 @@ export function buildThreadInstructions(niche: string, topic: string, tone: Tone
 		"{ \"title\": string, \"segments\": string[], \"cta\"?: string, \"quoteIdea\"?: string }",
 		"Constraints:",
 		"- Title/hook on first tweet",
-		"- 6–10 numbered tweet segments in segments[], each < 280 chars",
+		"- 5–8 numbered tweet segments in segments[], each < 280 chars",
+		"- Choose the number of segments based on context richness: use ~5 if little context, up to 8 if context is rich and varied",
 		"- Optional CTA or quote-tweet idea",
 		"- Keep formatting clean. No hashtags unless natural. Avoid emojis unless tone strongly implies.",
 		"Respond ONLY with valid JSON. No prose or Markdown.",
