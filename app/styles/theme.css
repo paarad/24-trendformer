@@ -10,22 +10,22 @@
 		--primary-fg: #ffffff;  /* white */
 	}
 	body { background: var(--bg); color: var(--fg); }
+}
 
-	@media (prefers-color-scheme: dark) {
-		:root {
-			--bg: #0b0b0b;
-			--fg: #e7e7e7;
-			--muted: #9aa0a6;
-			--panel: #151515;
-			--border: #262626;
-			--primary: #e7e7e7;
-			--primary-fg: #0b0b0b;
-		}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #0b0b0b;
+		--fg: #e7e7e7;
+		--muted: #9aa0a6;
+		--panel: #151515;
+		--border: #262626;
+		--primary: #e7e7e7;
+		--primary-fg: #0b0b0b;
 	}
 }
 
 @layer components {
-	.btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border:1px solid var(--border); background:transparent; color:var(--fg); padding:.5rem .875rem; border-radius:.5rem; transition: background .15s ease; }
+	.btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border:1px solid var(--border); background:transparent; color:var(--fg); padding:.5rem .875rem; border-radius:.5rem; transition: background .15s ease; white-space: nowrap; }
 	.btn:hover { background: rgba(17,24,39,.05); }
 	.btn:disabled { opacity:.6; cursor:not-allowed; }
 	.btn-primary { background: var(--primary); color: var(--primary-fg); }
