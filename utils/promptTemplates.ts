@@ -20,10 +20,13 @@ export function buildThreadInstructions(niche: string, topic: string, tone: Tone
 	return [
 		`Niche: ${niche}`,
 		`Trending topic: ${topic}`,
-		"Return structured, platform-ready Twitter thread copy:",
+		"Return a JSON object with this exact shape (keys in lowerCamelCase):",
+		"{ \"title\": string, \"segments\": string[], \"cta\"?: string, \"quoteIdea\"?: string }",
+		"Constraints:",
 		"- Title/hook on first tweet",
-		"- 6–10 numbered tweet segments, each < 280 chars",
+		"- 6–10 numbered tweet segments in segments[], each < 280 chars",
 		"- Optional CTA or quote-tweet idea",
-		"Keep formatting clean. No hashtags unless natural. Avoid emojis unless tone strongly implies.",
+		"- Keep formatting clean. No hashtags unless natural. Avoid emojis unless tone strongly implies.",
+		"Respond ONLY with valid JSON. No prose or Markdown.",
 	].join("\n");
 } 
