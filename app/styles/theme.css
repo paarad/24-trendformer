@@ -1,25 +1,38 @@
 @layer base {
 	:root {
-		--bg: #0b0b0b;
-		--fg: #e7e7e7;
-		--muted: #9aa0a6;
-		--panel: #151515;
-		--border: #262626;
-		--primary: #e7e7e7;
-		--primary-fg: #0b0b0b;
+		/* Neutral light palette (shadcn-like) */
+		--bg: #f7f7f7;          /* neutral-50 */
+		--fg: #111827;          /* neutral-900 */
+		--muted: #6b7280;       /* neutral-500 */
+		--panel: #ffffff;       /* white */
+		--border: #e5e7eb;      /* neutral-200 */
+		--primary: #111827;     /* neutral-900 */
+		--primary-fg: #ffffff;  /* white */
 	}
 	body { background: var(--bg); color: var(--fg); }
+
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--bg: #0b0b0b;
+			--fg: #e7e7e7;
+			--muted: #9aa0a6;
+			--panel: #151515;
+			--border: #262626;
+			--primary: #e7e7e7;
+			--primary-fg: #0b0b0b;
+		}
+	}
 }
 
 @layer components {
-	.btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border:1px solid var(--border); background:transparent; color:var(--fg); padding:.5rem .875rem; border-radius:.5rem; }
-	.btn:hover { background: rgba(255,255,255,.05); }
+	.btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border:1px solid var(--border); background:transparent; color:var(--fg); padding:.5rem .875rem; border-radius:.5rem; transition: background .15s ease; }
+	.btn:hover { background: rgba(17,24,39,.05); }
 	.btn:disabled { opacity:.6; cursor:not-allowed; }
 	.btn-primary { background: var(--primary); color: var(--primary-fg); }
-	.btn-primary:hover { background: #d9d9d9; }
+	.btn-primary:hover { background: #1f2937; }
 
-	.input, .select { width:100%; background:transparent; border:1px solid var(--border); color:var(--fg); padding:.5rem .75rem; border-radius:.5rem; }
-	.input:focus, .select:focus { outline:none; border-color:#3a3a3a; }
+	.input, .select { width:100%; background:var(--panel); border:1px solid var(--border); color:var(--fg); padding:.5rem .75rem; border-radius:.5rem; }
+	.input:focus, .select:focus { outline:none; border-color:#d1d5db; box-shadow: 0 0 0 3px rgba(17,24,39,.08); }
 
 	.label { font-size:.8125rem; color: var(--muted); }
 
