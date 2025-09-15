@@ -11,7 +11,7 @@ export type Trend = {
 	topComment?: string | null;
 };
 
-const CURATED_SUBREDDITS = [
+const DEFAULT_SUBREDDITS = [
 	"technology",
 	"selfimprovement",
 	"Fitness",
@@ -19,6 +19,33 @@ const CURATED_SUBREDDITS = [
 	"AskMen",
 	"AskWomen",
 ];
+
+const NICHE_TO_SUBREDDITS: Record<string, string[]> = {
+	ai: ["MachineLearning", "ArtificialIntelligence", "OpenAI", "ChatGPT", "LanguageTechnology"],
+	fitness: ["Fitness", "bodyweightfitness", "nutrition", "running"],
+	dating: ["dating", "AskMen", "AskWomen", "relationships"],
+	marketing: ["marketing", "SEO", "Entrepreneur", "content_marketing"],
+	crypto: ["CryptoCurrency", "CryptoMarkets", "ethereum", "Bitcoin"],
+	freelancing: ["freelance", "digitalnomad", "Entrepreneur", "smallbusiness"],
+	startups: ["startups", "Entrepreneur", "SaaS", "smallbusiness"],
+	productivity: ["productivity", "selfimprovement", "GetMotivated", "lifehacks"],
+};
+
+const NICHE_TO_HN_KEYWORDS: Record<string, string[]> = {
+	ai: [" ai ", "ai:", "machine learning", "ml ", "chatgpt", "openai", "llm", "transformer", "gpt"],
+	fitness: ["fitness", "workout", "exercise", "health", "sleep"],
+	dating: ["dating", "relationships", "romance"],
+	marketing: ["marketing", "seo", "growth", "ads", "newsletter"],
+	crypto: ["crypto", "bitcoin", "ethereum", "web3", "defi"],
+	freelancing: ["freelance", "contract", "gig", "client"],
+	startups: ["startup", "funding", "bootstrapping", "saas"],
+	productivity: ["productivity", "time management", "focus", "habits"],
+};
+
+function normalizeNiche(n: string | undefined): string | undefined {
+	if (!n) return undefined;
+	return n.toLowerCase();
+}
 
 async function fetchExplodingTopics(niche: string): Promise<Trend[]> {
 	// Placeholder for real API integration
@@ -67,11 +94,13 @@ async function fetchGlasp(niche: string): Promise<Trend[]> {
 	}
 }
 
-async function fetchRedditCurated(): Promise<Trend[]> {
+async function fetchRedditCurated(niche?: string): Promise<Trend[]> {
 	const headers = { "user-agent": "trendformer/1.0" } as const;
 	const limit = 5;
 	const results: Trend[] = [];
-	for (const sub of CURATED_SUBREDDITS) {
+	const n = normalizeNiche(niche);
+	const list = (n && NICHE_TO_SUBREDDITS[n]) || DEFAULT_SUBREDDITS;
+	for (const sub of list) {
 		const listUrl = `https://www.reddit.com/r/${encodeURIComponent(sub)}/hot.json?limit=${limit}`;
 		try {
 			const res = await fetch(listUrl, { headers });
@@ -111,12 +140,12 @@ async function fetchRedditCurated(): Promise<Trend[]> {
 	return results;
 }
 
-async function fetchHackerNewsOfficial(minScore?: number): Promise<Trend[]> {
+async function fetchHackerNewsOfficial(minScore?: number, niche?: string): Promise<Trend[]> {
 	try {
 		const listRes = await fetch("https://hacker-news.firebaseio.com/v0/topstories.json");
 		if (!listRes.ok) return [];
 		const ids: number[] = await listRes.json();
-		const take = ids.slice(0, 50);
+		const take = ids.slice(0, 60);
 		const items = await Promise.all(
 			take.map(async (id) => {
 				try {
@@ -128,12 +157,19 @@ async function fetchHackerNewsOfficial(minScore?: number): Promise<Trend[]> {
 				}
 			})
 		);
+		const n = normalizeNiche(niche);
+		const keywords = (n && NICHE_TO_HN_KEYWORDS[n]) || [];
 		return items
 			.filter(Boolean)
 			.map((it: any): Trend | null => {
 				if (!it?.title) return null;
 				if (typeof minScore === "number" && typeof it?.score === "number" && it.score < minScore) {
 					return null;
+				}
+				if (keywords.length > 0) {
+					const titleLc = String(it.title).toLowerCase();
+					const matched = keywords.some((kw) => titleLc.includes(kw.toLowerCase()));
+					if (!matched) return null;
 				}
 				return {
 					topic: it.title as string,
@@ -176,15 +212,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		let trends: Trend[] = [];
 		if (!useMock) {
 			if (provider === "reddit") {
-				trends = await fetchRedditCurated();
+				trends = await fetchRedditCurated(niche);
 			} else if (provider === "hn") {
-				trends = await fetchHackerNewsOfficial(minScore);
+				trends = await fetchHackerNewsOfficial(minScore, niche);
 			} else if (provider === "glasp") {
 				trends = await fetchGlasp(niche);
 			} else {
 				const [r, hn, g] = await Promise.all([
-					fetchRedditCurated(),
-					fetchHackerNewsOfficial(minScore),
+					fetchRedditCurated(niche),
+					fetchHackerNewsOfficial(minScore, niche),
 					fetchGlasp(niche),
 				]);
 				trends = [...r, ...hn, ...g];

@@ -52,6 +52,7 @@ export default function Home() {
       const params = new URLSearchParams();
       params.set("mock", "false");
       params.set("provider", provider);
+      params.set("niche", niche);
       if (provider === "hn" || provider === "all") params.set("minScore", String(minScore));
       params.set("save", saveToDb ? "true" : "false");
       const url = `/api/getTrends?${params.toString()}`;
@@ -65,7 +66,7 @@ export default function Home() {
     } finally {
       setLoadingTrends(false);
     }
-  }, [provider, minScore, saveToDb]);
+  }, [provider, minScore, saveToDb, niche]);
 
   const generate = useCallback(async () => {
     if (selectedIdx < 0 || !trends[selectedIdx]) {
