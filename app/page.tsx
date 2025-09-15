@@ -118,115 +118,97 @@ export default function Home() {
     <div className="min-h-screen p-6 sm:p-10 max-w-5xl mx-auto">
       <header className="flex items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-semibold">Trendformer</h1>
-        <div className="text-sm opacity-70">Generate threads from fresh trends</div>
+        <div className="text-sm text-[var(--muted)]">Generate threads from fresh trends</div>
       </header>
 
-      <section className="grid sm:grid-cols-5 gap-4 mb-6">
+      <div className="grid sm:grid-cols-5 gap-4 mb-6">
         <div className="flex flex-col gap-2">
-          <label className="text-sm">Niche</label>
-          <select value={niche} onChange={(e) => setNiche(e.target.value)} className="border rounded-md px-3 py-2 bg-transparent">
-            {NICHES.map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
+          <label className="label">Niche</label>
+          <select value={niche} onChange={(e) => setNiche(e.target.value)} className="select">
+            {NICHES.map((n) => (<option key={n} value={n}>{n}</option>))}
           </select>
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm">Tone</label>
-          <select value={tone} onChange={(e) => setTone(e.target.value as Tone)} className="border rounded-md px-3 py-2 bg-transparent">
-            {TONES.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
+          <label className="label">Tone</label>
+          <select value={tone} onChange={(e) => setTone(e.target.value as Tone)} className="select">
+            {TONES.map((t) => (<option key={t} value={t}>{t}</option>))}
           </select>
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm">Provider</label>
-          <select value={provider} onChange={(e) => setProvider(e.target.value as Provider)} className="border rounded-md px-3 py-2 bg-transparent">
-            {PROVIDERS.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
+          <label className="label">Provider</label>
+          <select value={provider} onChange={(e) => setProvider(e.target.value as Provider)} className="select">
+            {PROVIDERS.map((p) => (<option key={p} value={p}>{p}</option>))}
           </select>
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm">HN min score</label>
-          <input type="number" value={minScore} onChange={(e) => setMinScore(Number(e.target.value || 0))} className="border rounded-md px-3 py-2 bg-transparent" />
+          <label className="label">HN min score</label>
+          <input type="number" value={minScore} onChange={(e) => setMinScore(Number(e.target.value || 0))} className="input" />
         </div>
         <div className="flex flex-col gap-2">
-          <label className="text-sm">Save to DB</label>
+          <label className="label">Save to DB</label>
           <input type="checkbox" checked={saveToDb} onChange={(e) => setSaveToDb(e.target.checked)} className="h-5 w-5" />
         </div>
-      </section>
+      </div>
 
-      <section className="grid sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid sm:grid-cols-3 gap-4 mb-8">
         <div className="sm:col-span-2 flex flex-col gap-2">
-          <label className="text-sm">Trending topics</label>
-          <select
-            value={selectedIdx >= 0 ? String(selectedIdx) : ""}
-            onChange={(e) => setSelectedIdx(Number(e.target.value))}
-            className="border rounded-md px-3 py-2 bg-transparent"
-          >
-            <option value="" disabled>
-              {trends.length ? "Select a topic" : "Fetch trends to load topics"}
-            </option>
-            {trends.map((t, idx) => (
-              <option key={`${t.topic}-${idx}`} value={idx}>
-                {t.topic}
-              </option>
-            ))}
+          <label className="label">Trending topics</label>
+          <select value={selectedIdx >= 0 ? String(selectedIdx) : ""} onChange={(e) => setSelectedIdx(Number(e.target.value))} className="select">
+            <option value="" disabled>{trends.length ? "Select a topic" : "Fetch trends to load topics"}</option>
+            {trends.map((t, idx) => (<option key={`${t.topic}-${idx}`} value={idx}>{t.topic}</option>))}
           </select>
           {selectedTrend?.url ? (
-            <a href={selectedTrend.url} target="_blank" rel="noreferrer" className="text-xs underline opacity-70">Open source link</a>
+            <a href={selectedTrend.url} target="_blank" rel="noreferrer" className="text-xs underline text-[var(--muted)]">Open source link</a>
           ) : null}
           {selectedTrend?.topComment ? (
-            <div className="text-xs opacity-70 whitespace-pre-wrap">Top comment: {selectedTrend.topComment}</div>
+            <div className="text-xs text-[var(--muted)] whitespace-pre-wrap">Top comment: {selectedTrend.topComment}</div>
           ) : null}
         </div>
         <div className="flex items-end gap-2">
-          <button onClick={loadTrends} className="border rounded-md px-4 py-2 w-full sm:w-auto hover:bg-black/5" disabled={loadingTrends}>
-            {loadingTrends ? "Loading trends..." : "Fetch Trends"}
-          </button>
-          <button onClick={generate} className="border rounded-md px-4 py-2 w-full sm:w-auto hover:bg-black/5" disabled={loadingThread || selectedIdx < 0}>
-            {loadingThread ? "Generating..." : "Generate"}
-          </button>
-          <button onClick={remix} className="border rounded-md px-4 py-2 w-full sm:w-auto hover:bg-black/5" disabled={loadingThread || selectedIdx < 0}>Remix</button>
+          <button onClick={loadTrends} className="btn" disabled={loadingTrends}>{loadingTrends ? "Loading trends..." : "Fetch Trends"}</button>
+          <button onClick={generate} className="btn btn-primary" disabled={loadingThread || selectedIdx < 0}>{loadingThread ? "Generating..." : "Generate"}</button>
+          <button onClick={remix} className="btn" disabled={loadingThread || selectedIdx < 0}>Remix</button>
         </div>
-      </section>
+      </div>
 
-      {error ? <div className="mb-6 text-red-600 text-sm">{error}</div> : null}
+      {error ? <div className="mb-6 text-red-400 text-sm">{error}</div> : null}
 
       {thread ? (
-        <section className="border rounded-lg p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">Preview</h2>
-            <button onClick={copyAll} className="border rounded-md px-3 py-1.5 hover:bg-black/5 text-sm">Copy all</button>
-          </div>
-          <div className="space-y-3">
-            <div>
-              <div className="text-sm uppercase opacity-70 mb-1">Hook</div>
-              <div className="whitespace-pre-wrap">{thread.title}</div>
+        <section className="card">
+          <div className="card-body flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold">Preview</h2>
+              <button onClick={copyAll} className="btn">Copy all</button>
             </div>
-            {thread.segments?.map((seg, i) => (
-              <div key={i}>
-                <div className="text-sm uppercase opacity-70 mb-1">Tweet {i + 1}</div>
-                <div className="whitespace-pre-wrap">{seg}</div>
-              </div>
-            ))}
-            {thread.cta ? (
+            <div className="space-y-3">
               <div>
-                <div className="text-sm uppercase opacity-70 mb-1">CTA</div>
-                <div className="whitespace-pre-wrap">{thread.cta}</div>
+                <div className="text-sm uppercase text-[var(--muted)] mb-1">Hook</div>
+                <div className="whitespace-pre-wrap">{thread.title}</div>
               </div>
-            ) : null}
-            {thread.quoteIdea ? (
-              <div>
-                <div className="text-sm uppercase opacity-70 mb-1">Quote idea</div>
-                <div className="whitespace-pre-wrap">{thread.quoteIdea}</div>
-              </div>
-            ) : null}
+              {thread.segments?.map((seg, i) => (
+                <div key={i}>
+                  <div className="text-sm uppercase text-[var(--muted)] mb-1">Tweet {i + 1}</div>
+                  <div className="whitespace-pre-wrap">{seg}</div>
+                </div>
+              ))}
+              {thread.cta ? (
+                <div>
+                  <div className="text-sm uppercase text-[var(--muted)] mb-1">CTA</div>
+                  <div className="whitespace-pre-wrap">{thread.cta}</div>
+                </div>
+              ) : null}
+              {thread.quoteIdea ? (
+                <div>
+                  <div className="text-sm uppercase text-[var(--muted)] mb-1">Quote idea</div>
+                  <div className="whitespace-pre-wrap">{thread.quoteIdea}</div>
+                </div>
+              ) : null}
+            </div>
           </div>
         </section>
       ) : null}
 
-      <footer className="mt-10 text-xs opacity-60">Built with Next.js · OpenAI · Supabase</footer>
+      <footer className="mt-10 text-xs text-[var(--muted)]">Built with Next.js · OpenAI · Supabase</footer>
     </div>
   );
 }
