@@ -8,6 +8,7 @@ const bodySchema = z.object({
 	niche: z.string().min(1),
 	topic: z.string().min(1),
 	tone: z.union([z.literal("degen"), z.literal("contrarian"), z.literal("expert")]),
+	context: z.string().optional(),
 });
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -22,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		return res.status(400).json({ error: "Invalid body", details: parse.error.flatten() });
 	}
 
-	const { niche, topic, tone } = parse.data as { niche: string; topic: string; tone: Tone };
+	const { niche, topic, tone, context } = parse.data as { niche: string; topic: string; tone: Tone; context?: string };
 
 	try {
 		if (!openai.apiKey) {
@@ -30,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		}
 
 		const system = toneSystemPrompts[tone];
-		const instructions = buildThreadInstructions(niche, topic, tone);
+		const instructions = buildThreadInstructions(niche, topic, tone, context);
 
 		const response = await openai.chat.completions.create({
 			model: "gpt-4o-mini",

@@ -16,10 +16,16 @@ export type ThreadOutput = {
 	quoteIdea?: string;
 };
 
-export function buildThreadInstructions(niche: string, topic: string, tone: Tone): string {
-	return [
+export function buildThreadInstructions(niche: string, topic: string, tone: Tone, context?: string): string {
+	const lines: string[] = [
 		`Niche: ${niche}`,
 		`Trending topic: ${topic}`,
+	];
+	if (context && context.trim().length > 0) {
+		lines.push("Context (from Reddit/HN):");
+		lines.push(context.trim());
+	}
+	lines.push(
 		"Return a JSON object with this exact shape (keys in lowerCamelCase):",
 		"{ \"title\": string, \"segments\": string[], \"cta\"?: string, \"quoteIdea\"?: string }",
 		"Constraints:",
@@ -28,5 +34,6 @@ export function buildThreadInstructions(niche: string, topic: string, tone: Tone
 		"- Optional CTA or quote-tweet idea",
 		"- Keep formatting clean. No hashtags unless natural. Avoid emojis unless tone strongly implies.",
 		"Respond ONLY with valid JSON. No prose or Markdown.",
-	].join("\n");
+	);
+	return lines.join("\n");
 } 
