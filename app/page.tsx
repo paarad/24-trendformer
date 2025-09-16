@@ -61,8 +61,9 @@ export default function Home() {
       const data = await res.json();
       setTrends(data.trends || []);
       if ((data.trends || []).length > 0) setSelectedIdx(0);
-    } catch (e: any) {
-      setError(e?.message || "Failed to fetch trends");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message || "Failed to fetch trends");
     } finally {
       setLoadingTrends(false);
     }
@@ -87,8 +88,9 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `Failed to generate: ${res.status}`);
       setThread(data.thread as ThreadOutput);
-    } catch (e: any) {
-      setError(e?.message || "Failed to generate thread");
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : String(e);
+      setError(message || "Failed to generate thread");
     } finally {
       setLoadingThread(false);
     }

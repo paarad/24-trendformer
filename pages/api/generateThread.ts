@@ -49,7 +49,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		void recordTelemetry({ feature: "generateThread", metadata: { tone, niche } });
 
 		return res.status(200).json({ thread: parsed });
-	} catch (err: any) {
-		return res.status(500).json({ error: err?.message || "Unknown error" });
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : String(err);
+		return res.status(500).json({ error: message || "Unknown error" });
 	}
 } 

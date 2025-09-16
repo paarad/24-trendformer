@@ -11,6 +11,14 @@ export type Trend = {
 	topComment?: string | null;
 };
 
+function isArray(value: unknown): value is unknown[] {
+	return Array.isArray(value);
+}
+
+function getString(value: unknown): string | undefined {
+	return typeof value === "string" ? value : undefined;
+}
+
 const DEFAULT_SUBREDDITS = [
 	"technology",
 	"selfimprovement",
@@ -68,24 +76,25 @@ async function fetchGlasp(niche: string): Promise<Trend[]> {
 	try {
 		const res = await fetch(url, { headers });
 		if (!res.ok) return [];
-		const json = await res.json();
-		const arr: any[] = Array.isArray(json)
-			? json
-			: Array.isArray(json?.data)
-				? json.data
-				: Array.isArray(json?.trends)
-				? json.trends
-				: [];
+		const json: unknown = await res.json();
+		const arr = isArray((json as any)?.data)
+			? ((json as any).data as unknown[])
+			: isArray((json as any)?.trends)
+			? ((json as any).trends as unknown[])
+			: isArray(json)
+			? (json as unknown[])
+			: [];
 		return arr
-			.map((it: any): Trend | null => {
-				const title = it?.title || it?.topic || it?.name || it?.headline;
+			.map((itUnknown): Trend | null => {
+				const it = itUnknown as Record<string, unknown>;
+				const title = getString(it.title) || getString(it.topic) || getString(it.name) || getString(it.headline);
 				if (!title) return null;
 				return {
 					topic: String(title),
 					source: "glasp",
-					score: typeof it?.score === "number" ? it.score : undefined,
-					timestamp: it?.timestamp || it?.created_at || new Date().toISOString(),
-					url: it?.url || it?.link,
+					score: typeof it?.score === "number" ? (it.score as number) : undefined,
+					timestamp: (getString(it.timestamp) || getString(it.created_at)) ?? new Date().toISOString(),
+					url: getString(it.url) || getString(it.link),
 				};
 			})
 			.filter(Boolean) as Trend[];
@@ -105,31 +114,39 @@ async function fetchRedditCurated(niche?: string): Promise<Trend[]> {
 		try {
 			const res = await fetch(listUrl, { headers });
 			if (!res.ok) continue;
-			const json = await res.json();
-			const children: any[] = json?.data?.children ?? [];
-			for (const c of children) {
-				const p = c?.data;
-				if (!p?.title) continue;
+			const json: unknown = await res.json();
+			const children = (json as any)?.data?.children as unknown[] | undefined;
+			for (const cUnknown of children ?? []) {
+				const c = cUnknown as Record<string, unknown>;
+				const p = c?.data as Record<string, unknown> | undefined;
+				const title = getString(p?.title);
+				if (!title) continue;
 				let topComment: string | null = null;
 				try {
-					const commentsUrl = `https://www.reddit.com/r/${encodeURIComponent(sub)}/comments/${p.id}.json?limit=1&depth=1&sort=top`;
-					const cr = await fetch(commentsUrl, { headers });
-					if (cr.ok) {
-						const cjson = await cr.json();
-						const commentsListing = Array.isArray(cjson) ? cjson[1] : null;
-						const first = commentsListing?.data?.children?.[0]?.data?.body;
-						topComment = typeof first === "string" ? first : null;
+					const idStr = getString(p?.id);
+					if (idStr) {
+						const commentsUrl = `https://www.reddit.com/r/${encodeURIComponent(sub)}/comments/${idStr}.json?limit=1&depth=1&sort=top`;
+						const cr = await fetch(commentsUrl, { headers });
+						if (cr.ok) {
+							const cjson: unknown = await cr.json();
+							const listing = isArray(cjson) ? (cjson as unknown[])[1] : undefined;
+							const first = (listing as any)?.data?.children?.[0]?.data?.body as unknown;
+							topComment = getString(first) ?? null;
+						}
 					}
 				} catch {
 					// ignore comment errors
 				}
+				const createdUtc = (p?.created_utc as number | undefined) ?? undefined;
+				const permalink = getString(p?.permalink);
+				const overridden = getString((p as any)?.url_overridden_by_dest);
 				results.push({
-					topic: p.title as string,
+					topic: title,
 					source: "reddit",
-					score: typeof p.score === "number" ? p.score : undefined,
-					timestamp: p.created_utc ? new Date(p.created_utc * 1000).toISOString() : new Date().toISOString(),
-					url: p.url_overridden_by_dest || (p.permalink ? `https://reddit.com${p.permalink}` : undefined),
-					body: p.selftext || undefined,
+					score: typeof p?.score === "number" ? (p.score as number) : undefined,
+					timestamp: createdUtc ? new Date(createdUtc * 1000).toISOString() : new Date().toISOString(),
+					url: overridden || (permalink ? `https://reddit.com${permalink}` : undefined),
+					body: getString(p?.selftext) || undefined,
 					topComment,
 				});
 			}
@@ -151,7 +168,7 @@ async function fetchHackerNewsOfficial(minScore?: number, niche?: string): Promi
 				try {
 					const r = await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`);
 					if (!r.ok) return null;
-					return (await r.json()) as any;
+					return (await r.json()) as unknown;
 				} catch {
 					return null;
 				}
@@ -161,22 +178,27 @@ async function fetchHackerNewsOfficial(minScore?: number, niche?: string): Promi
 		const keywords = (n && NICHE_TO_HN_KEYWORDS[n]) || [];
 		return items
 			.filter(Boolean)
-			.map((it: any): Trend | null => {
-				if (!it?.title) return null;
-				if (typeof minScore === "number" && typeof it?.score === "number" && it.score < minScore) {
+			.map((itUnknown): Trend | null => {
+				const it = itUnknown as Record<string, unknown>;
+				const title = getString(it?.title);
+				if (!title) return null;
+				const score = typeof it?.score === "number" ? (it.score as number) : undefined;
+				if (typeof minScore === "number" && typeof score === "number" && score < minScore) {
 					return null;
 				}
 				if (keywords.length > 0) {
-					const titleLc = String(it.title).toLowerCase();
+					const titleLc = title.toLowerCase();
 					const matched = keywords.some((kw) => titleLc.includes(kw.toLowerCase()));
 					if (!matched) return null;
 				}
+				const time = typeof it?.time === "number" ? (it.time as number) : undefined;
+				const url = getString(it?.url) || (typeof it?.id === "number" ? `https://news.ycombinator.com/item?id=${it.id as number}` : undefined);
 				return {
-					topic: it.title as string,
+					topic: title,
 					source: "hn",
-					score: typeof it.score === "number" ? it.score : undefined,
-					timestamp: it?.time ? new Date(it.time * 1000).toISOString() : new Date().toISOString(),
-					url: it?.url || (it?.id ? `https://news.ycombinator.com/item?id=${it.id}` : undefined),
+					score,
+					timestamp: time ? new Date(time * 1000).toISOString() : new Date().toISOString(),
+					url,
 				};
 			})
 			.filter(Boolean) as Trend[];
@@ -239,7 +261,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		}
 
 		return res.status(200).json({ niche, provider, mock: useMock, trends });
-	} catch (err: any) {
-		return res.status(500).json({ error: err?.message || "Unknown error" });
+	} catch (err: unknown) {
+		const message = err instanceof Error ? err.message : String(err);
+		return res.status(500).json({ error: message || "Unknown error" });
 	}
 } 
