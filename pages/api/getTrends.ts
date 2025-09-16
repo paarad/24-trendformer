@@ -19,6 +19,22 @@ function getString(value: unknown): string | undefined {
 	return typeof value === "string" ? value : undefined;
 }
 
+function getArray(obj: unknown, key: string): unknown[] | undefined {
+	if (!obj || typeof obj !== "object") return undefined;
+	const val = (obj as Record<string, unknown>)[key];
+	return Array.isArray(val) ? (val as unknown[]) : undefined;
+}
+
+function getNested(obj: unknown, path: string[]): unknown {
+	let cur: unknown = obj;
+	for (const key of path) {
+		if (!cur || typeof cur !== "object") return undefined;
+		const next = (cur as Record<string, unknown>)[key];
+		cur = next;
+	}
+	return cur;
+}
+
 const DEFAULT_SUBREDDITS = [
 	"technology",
 	"selfimprovement",
@@ -55,7 +71,7 @@ function normalizeNiche(n: string | undefined): string | undefined {
 	return n.toLowerCase();
 }
 
-async function fetchExplodingTopics(niche: string): Promise<Trend[]> {
+async function fetchExplodingTopics(_niche: string): Promise<Trend[]> {
 	// Placeholder for real API integration
 	return [];
 }
@@ -77,23 +93,17 @@ async function fetchGlasp(niche: string): Promise<Trend[]> {
 		const res = await fetch(url, { headers });
 		if (!res.ok) return [];
 		const json: unknown = await res.json();
-		const arr = isArray((json as any)?.data)
-			? ((json as any).data as unknown[])
-			: isArray((json as any)?.trends)
-			? ((json as any).trends as unknown[])
-			: isArray(json)
-			? (json as unknown[])
-			: [];
+		const arr = getArray(json, "data") ?? getArray(json, "trends") ?? (isArray(json) ? (json as unknown[]) : []);
 		return arr
 			.map((itUnknown): Trend | null => {
 				const it = itUnknown as Record<string, unknown>;
 				const title = getString(it.title) || getString(it.topic) || getString(it.name) || getString(it.headline);
 				if (!title) return null;
 				return {
-					topic: String(title),
+					topic: title,
 					source: "glasp",
-					score: typeof it?.score === "number" ? (it.score as number) : undefined,
-					timestamp: (getString(it.timestamp) || getString(it.created_at)) ?? new Date().toISOString(),
+					score: typeof it.score === "number" ? (it.score as number) : undefined,
+					timestamp: getString(it.timestamp) || getString(it.created_at) || new Date().toISOString(),
 					url: getString(it.url) || getString(it.link),
 				};
 			})
@@ -115,10 +125,10 @@ async function fetchRedditCurated(niche?: string): Promise<Trend[]> {
 			const res = await fetch(listUrl, { headers });
 			if (!res.ok) continue;
 			const json: unknown = await res.json();
-			const children = (json as any)?.data?.children as unknown[] | undefined;
-			for (const cUnknown of children ?? []) {
-				const c = cUnknown as Record<string, unknown>;
-				const p = c?.data as Record<string, unknown> | undefined;
+			const children = getNested(json, ["data", "children"]);
+			if (!isArray(children)) continue;
+			for (const cUnknown of children) {
+				const p = getNested(cUnknown, ["data"]) as Record<string, unknown> | undefined;
 				const title = getString(p?.title);
 				if (!title) continue;
 				let topComment: string | null = null;
@@ -130,7 +140,7 @@ async function fetchRedditCurated(niche?: string): Promise<Trend[]> {
 						if (cr.ok) {
 							const cjson: unknown = await cr.json();
 							const listing = isArray(cjson) ? (cjson as unknown[])[1] : undefined;
-							const first = (listing as any)?.data?.children?.[0]?.data?.body as unknown;
+							const first = getNested(listing, ["data", "children", "0", "data", "body"]);
 							topComment = getString(first) ?? null;
 						}
 					}
@@ -139,7 +149,7 @@ async function fetchRedditCurated(niche?: string): Promise<Trend[]> {
 				}
 				const createdUtc = (p?.created_utc as number | undefined) ?? undefined;
 				const permalink = getString(p?.permalink);
-				const overridden = getString((p as any)?.url_overridden_by_dest);
+				const overridden = getString(getNested(p, ["url_overridden_by_dest"]));
 				results.push({
 					topic: title,
 					source: "reddit",
