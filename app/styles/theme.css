@@ -1,41 +1,106 @@
 @layer base {
 	:root {
-		/* Neutral light palette (shadcn-like) */
-		--bg: #f7f7f7;          /* neutral-50 */
-		--fg: #111827;          /* neutral-900 */
-		--muted: #6b7280;       /* neutral-500 */
-		--panel: #ffffff;       /* white */
-		--border: #e5e7eb;      /* neutral-200 */
-		--primary: #111827;     /* neutral-900 */
-		--primary-fg: #ffffff;  /* white */
+		/* Clean light theme only */
+		--bg: #ffffff;
+		--fg: #000000;
+		--muted: #666666;
+		--panel: #ffffff;
+		--border: rgba(0,0,0,0.2);
+		--primary: #000000;
+		--primary-fg: #ffffff;
 	}
-	body { background: var(--bg); color: var(--fg); }
-}
-
-@media (prefers-color-scheme: dark) {
-	:root {
-		--bg: #0b0b0b;
-		--fg: #e7e7e7;
-		--muted: #9aa0a6;
-		--panel: #151515;
-		--border: #262626;
-		--primary: #e7e7e7;
-		--primary-fg: #0b0b0b;
+	
+	html {
+		background-color: #ffffff !important;
+	}
+	
+	body { 
+		background-color: #ffffff !important;
+		color: #000000 !important;
+		font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
 	}
 }
 
 @layer components {
-	.btn { display:inline-flex; align-items:center; justify-content:center; gap:.5rem; border:1px solid var(--border); background:transparent; color:var(--fg); padding:.5rem .875rem; border-radius:.5rem; transition: background .15s ease; white-space: nowrap; }
-	.btn:hover { background: rgba(17,24,39,.05); }
-	.btn:disabled { opacity:.6; cursor:not-allowed; }
-	.btn-primary { background: var(--primary); color: var(--primary-fg); }
-	.btn-primary:hover { background: #1f2937; }
+	.btn { 
+		display: inline-flex; 
+		align-items: center; 
+		justify-content: center; 
+		gap: 0.5rem; 
+		border: 1px solid var(--border); 
+		background: transparent; 
+		color: var(--fg); 
+		padding: 0.625rem 1rem; 
+		border-radius: 0.5rem; 
+		transition: all 0.15s ease; 
+		white-space: nowrap; 
+		font-size: 0.875rem;
+		font-weight: 500;
+	}
+	.btn:hover { background: rgba(0,0,0,0.05); }
+	.btn:disabled { opacity: 0.6; cursor: not-allowed; }
+	.btn-primary { 
+		background: var(--primary); 
+		color: var(--primary-fg); 
+		border-color: var(--primary);
+	}
+	.btn-primary:hover { opacity: 0.9; }
 
-	.input, .select { width:100%; background:var(--panel); border:1px solid var(--border); color:var(--fg); padding:.5rem .75rem; border-radius:.5rem; }
-	.input:focus, .select:focus { outline:none; border-color:#d1d5db; box-shadow: 0 0 0 3px rgba(17,24,39,.08); }
+	.input, .select { 
+		width: 100%; 
+		background: var(--panel); 
+		border: 1px solid var(--border); 
+		color: var(--fg); 
+		padding: 0.625rem 0.875rem; 
+		border-radius: 0.5rem; 
+		font-size: 0.875rem;
+		transition: border-color 0.15s ease;
+	}
+	.input:focus, .select:focus { 
+		outline: none; 
+		border-color: rgba(0,0,0,0.4);
+	}
 
-	.label { font-size:.8125rem; color: var(--muted); }
+	.label { 
+		font-size: 0.8125rem; 
+		color: var(--muted); 
+		font-weight: 500;
+	}
 
-	.card { border:1px solid var(--border); background: var(--panel); border-radius:.75rem; }
-	.card-body { padding:1rem; }
+	.card { 
+		border: 1px solid var(--border); 
+		background: var(--panel); 
+		border-radius: 1rem;
+		transition: all 0.15s ease;
+	}
+	.card-body { padding: 1.25rem; }
+
+	/* Clean sections */
+	.section {
+		border: 1px solid var(--border);
+		background: var(--panel);
+		border-radius: 1rem;
+		padding: 1.25rem 1.5rem;
+	}
+
+	/* Line clamp utilities */
+	.line-clamp-2 {
+		overflow: hidden;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+	}
+
+	/* Spinner animation */
+	@keyframes spin {
+		to { transform: rotate(360deg); }
+	}
+	.animate-spin { animation: spin 1s linear infinite; }
+
+	/* Pulse animation for loading skeletons */
+	@keyframes pulse {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0.5; }
+	}
+	.animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 } 

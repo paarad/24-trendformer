@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { saveTrendsToSupabase } from "@/utils/storage";
+import { saveTrendsToSupabase } from "../../utils/storage";
 
 export type Trend = {
 	topic: string;
@@ -10,6 +10,58 @@ export type Trend = {
 	body?: string;
 	topComment?: string | null;
 };
+
+// Simple in-memory cache with TTL
+type CacheEntry = {
+	data: Trend[];
+	expiry: number;
+};
+
+// Cache with 12-minute TTL (between 10-15 minutes as requested)
+const CACHE_TTL_MS = 12 * 60 * 1000; // 12 minutes
+const cache = new Map<string, CacheEntry>();
+
+function getCacheKey(params: { niche: string; provider: string; minScore?: number; useMock: boolean }): string {
+	return `${params.niche}-${params.provider}-${params.minScore || 'none'}-${params.useMock}`;
+}
+
+function getCachedTrends(cacheKey: string): Trend[] | null {
+	const entry = cache.get(cacheKey);
+	if (!entry || Date.now() > entry.expiry) {
+		cache.delete(cacheKey);
+		return null;
+	}
+	return entry.data;
+}
+
+function setCachedTrends(cacheKey: string, trends: Trend[]): void {
+	cache.set(cacheKey, {
+		data: trends,
+		expiry: Date.now() + CACHE_TTL_MS
+	});
+}
+
+// CRON security gate (optional)
+function checkCronAuth(req: NextApiRequest): boolean {
+	const expectedCronKey = process.env.CRON_KEY;
+	if (!expectedCronKey) {
+		// If no CRON_KEY is set, allow all requests (backwards compatible)
+		return true;
+	}
+	
+	// Check for CRON_KEY in headers (for automated requests)
+	const providedKey = req.headers['x-cron-key'] || req.headers['authorization']?.replace('Bearer ', '');
+	if (providedKey === expectedCronKey) {
+		return true;
+	}
+	
+	// Allow browser requests (when referer exists and it's not automation)
+	const referer = req.headers.referer;
+	const userAgent = req.headers['user-agent'] || '';
+	const isLikelyBrowser = referer && !userAgent.toLowerCase().includes('curl') && !userAgent.toLowerCase().includes('wget');
+	
+	return !!isLikelyBrowser;
+}
 
 function isArray(value: unknown): value is unknown[] {
 	return Array.isArray(value);
@@ -230,6 +282,11 @@ function getMockTrends(niche: string): Trend[] {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+	// CRON security gate (check early)
+	if (!checkCronAuth(req)) {
+		return res.status(401).json({ error: "Unauthorized: This endpoint requires proper authentication." });
+	}
+
 	const niche = (req.query.niche as string) || "AI";
 	const mockParam = (req.query.mock as string) || "";
 	const provider = ((req.query.provider as string) || "all").toLowerCase(); // reddit | hn | glasp | all
@@ -239,6 +296,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 	const shouldSave = saveParam.toLowerCase() !== "false";
 	const envMock = (process.env.USE_MOCK_TRENDS || "true").toLowerCase() === "true";
 	const useMock = mockParam ? mockParam.toLowerCase() === "true" : envMock;
+
+	// Check cache first (only for real API calls, not mock data)
+	const cacheKey = getCacheKey({ niche, provider, minScore, useMock });
+	if (!useMock) {
+		const cachedTrends = getCachedTrends(cacheKey);
+		if (cachedTrends) {
+			return res.status(200).json({ 
+				niche, 
+				provider, 
+				mock: useMock, 
+				trends: cachedTrends,
+				cached: true 
+			});
+		}
+	}
 
 	try {
 		let trends: Trend[] = [];
@@ -264,6 +336,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		}
 		if (useMock || trends.length === 0) {
 			trends = getMockTrends(niche);
+		}
+
+		// Cache the results (only for real API calls)
+		if (!useMock && trends.length > 0) {
+			setCachedTrends(cacheKey, trends);
 		}
 
 		if (shouldSave) {
