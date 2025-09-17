@@ -48,8 +48,6 @@ export default function Home() {
   const [niche, setNiche] = useState<string>("AI");
   const [tone, setTone] = useState<Tone>("expert");
   const [provider, setProvider] = useState<Provider>("all");
-  const [minScore, setMinScore] = useState<number>(100);
-  const [saveToDb, setSaveToDb] = useState<boolean>(true);
 
   const [trends, setTrends] = useState<Trend[]>([]);
   const [rankings, setRankings] = useState<RankedTrend[]>([]);
@@ -100,8 +98,8 @@ export default function Home() {
       params.set("mock", "false");
       params.set("provider", provider);
       params.set("niche", niche);
-      if (provider === "hn" || provider === "all") params.set("minScore", String(minScore));
-      params.set("save", saveToDb ? "true" : "false");
+      if (provider === "hn" || provider === "all") params.set("minScore", "100");
+      params.set("save", "true");
       const url = `/api/getTrends?${params.toString()}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Failed to load trends: ${res.status}`);
@@ -119,7 +117,7 @@ export default function Home() {
     } finally {
       setLoadingTrends(false);
     }
-  }, [provider, minScore, saveToDb, niche]);
+  }, [provider, niche]);
 
   const rankTrendsWithAI = useCallback(async (trendsToRank: Trend[]) => {
     try {
@@ -205,7 +203,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="font-sans min-h-screen bg-white p-6 sm:p-10 max-w-5xl mx-auto flex flex-col gap-8">
+    <div className="font-sans min-h-screen bg-white px-6 sm:px-10 py-6 sm:py-10 max-w-5xl mx-auto flex flex-col gap-8">
       {/* Hero Section */}
       <section className="pt-8 sm:pt-16 pb-2 sm:pb-4 text-center">
         <h1 className="text-4xl sm:text-6xl font-bold tracking-tight">Trendformer</h1>
@@ -214,7 +212,7 @@ export default function Home() {
 
       {/* Controls Section */}
       <section className="section">
-        <div className="grid sm:grid-cols-5 gap-4 mb-6">
+        <div className="grid sm:grid-cols-4 gap-4">
           <div className="flex flex-col gap-2">
             <label className="label">Niche</label>
             <select value={niche} onChange={(e) => setNiche(e.target.value)} className="select">
@@ -234,59 +232,39 @@ export default function Home() {
             </select>
           </div>
           <div className="flex flex-col gap-2">
-            <label className="label">HN min score</label>
-            <input type="number" value={minScore} onChange={(e) => setMinScore(Number(e.target.value || 0))} className="input" />
-          </div>
-          <div className="flex flex-col gap-2">
-            <label className="label">Save to DB</label>
-            <input type="checkbox" checked={saveToDb} onChange={(e) => setSaveToDb(e.target.checked)} className="h-5 w-5" />
+            <label className="label">Action</label>
+            <button onClick={loadTrends} className="btn btn-primary h-[42px]" disabled={loadingTrends}>
+              {loadingTrends ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Fetching...
+                </>
+              ) : (
+                "Fetch Trends"
+              )}
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <button onClick={loadTrends} className="btn" disabled={loadingTrends}>
-            {loadingTrends ? (
-              <>
-                <div className="w-4 h-4 border-2 border-[var(--muted)] border-t-[var(--fg)] rounded-full animate-spin"></div>
-                Loading trends...
-              </>
-            ) : (
-              "Fetch Trends"
-            )}
-          </button>
-          <button onClick={generate} className="btn btn-primary" disabled={loadingThread || selectedIdx < 0}>
-            {loadingThread ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Generating...
-              </>
-            ) : (
-              "Generate"
-            )}
-          </button>
-          <button onClick={remix} className="btn" disabled={loadingThread || selectedIdx < 0 || !thread}>
-            Remix
-          </button>
-          {loadingRankings && (
-            <div className="flex items-center gap-2 text-sm opacity-80">
-              <div className="w-3 h-3 border-2 border-[var(--muted)] border-t-[var(--fg)] rounded-full animate-spin"></div>
-              AI analyzing trends...
-            </div>
-          )}
-        </div>
+        {loadingRankings && (
+          <div className="flex items-center gap-2 text-sm opacity-80 mt-4">
+            <div className="w-3 h-3 border-2 border-[var(--muted)] border-t-[var(--fg)] rounded-full animate-spin"></div>
+            AI analyzing trends...
+          </div>
+        )}
       </section>
 
-              {error ? (
-          <section className="section border-red-300 bg-red-50">
-            <div className="text-red-800 text-sm font-medium">Error</div>
-            <div className="text-red-600 text-sm mt-1">{error}</div>
-          </section>
-        ) : null}
+      {error ? (
+        <section className="section border-red-300 bg-red-50">
+          <div className="text-red-800 text-sm font-medium">Error</div>
+          <div className="text-red-600 text-sm mt-1">{error}</div>
+        </section>
+      ) : null}
 
       {/* Main Content */}
-      <section className="grid lg:grid-cols-2 gap-6">
+      <section className={`grid gap-4 ${thread ? 'lg:grid-cols-[1fr_1.2fr]' : 'lg:grid-cols-[4fr_1fr]'}`}>
         {/* Trends Section */}
-        <div>
+        <div className="min-w-0">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-medium text-lg">Trending Topics</h3>
             {trends.length > 0 && (
@@ -307,10 +285,10 @@ export default function Home() {
             <div className="section text-center">
               <div className="text-4xl mb-3">📈</div>
               <div className="font-medium mb-1">No trends loaded yet</div>
-              <div className="text-sm opacity-80">Click "Fetch Trends" to get started</div>
+              <div className="text-sm opacity-80">Configure your preferences and click "Fetch Trends"</div>
             </div>
           ) : (
-            <div className="space-y-4 max-h-96 overflow-y-auto">
+            <div className="space-y-4 overflow-y-auto">
               {/* AI-Selected Top Picks */}
               {organizedTrends.aiPicks.length > 0 && (
                 <div>
@@ -321,12 +299,12 @@ export default function Home() {
                     </h4>
                   </div>
                   <div className="space-y-3">
-                    {organizedTrends.aiPicks.map(({ trend, ranking, originalIndex }, idx) => (
+                    {organizedTrends.aiPicks.slice(0, 2).map(({ trend, ranking, originalIndex }, idx) => (
                       <div
                         key={`ai-${originalIndex}`}
                         className={`section cursor-pointer relative overflow-hidden transition-all hover:shadow-lg ${
                           selectedIdx === originalIndex
-                            ? 'ring-2 ring-purple-500 ring-opacity-50 bg-gradient-to-r from-purple-50 to-pink-50'
+                            ? 'bg-gradient-to-r from-purple-50 to-pink-50'
                             : 'hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-pink-50/50'
                         }`}
                         onClick={() => handleTrendSelect(originalIndex)}
@@ -335,11 +313,11 @@ export default function Home() {
                         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-2xl"></div>
                         <div className="relative">
                           <div className="flex items-start justify-between gap-3 mb-2">
-                            <div className="flex items-start gap-2 flex-1">
+                            <div className="flex items-start gap-2 flex-1 min-w-0">
                               <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
                                 {idx + 1}
                               </div>
-                              <h4 className="font-medium leading-tight flex-1">{trend.topic}</h4>
+                              <h4 className="font-medium leading-tight flex-1 min-w-0">{trend.topic}</h4>
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <span className="text-xs font-mono bg-gradient-to-r from-purple-600 to-pink-600 text-white px-2 py-1 rounded-full">
@@ -376,12 +354,6 @@ export default function Home() {
                               </button>
                             )}
                           </div>
-                          
-                          {trend.topComment && (
-                            <div className="text-xs opacity-80 mt-2 line-clamp-2">
-                              {trend.topComment}
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}
@@ -412,7 +384,7 @@ export default function Home() {
                         onClick={() => handleTrendSelect(item.originalIndex)}
                       >
                         <div className="flex items-start justify-between gap-3 mb-2">
-                          <h4 className="font-medium leading-tight flex-1">{item.trend.topic}</h4>
+                          <h4 className="font-medium leading-tight flex-1 min-w-0">{item.trend.topic}</h4>
                           <div className="flex items-center gap-2 flex-shrink-0">
                             <span className={`px-2 py-1 text-xs rounded-full font-medium ${getSourceBadgeColor(item.trend.source)}`}>
                               {item.trend.source}
@@ -441,12 +413,6 @@ export default function Home() {
                             </button>
                           )}
                         </div>
-                        
-                        {item.trend.topComment && (
-                          <div className="text-xs opacity-80 mt-2 line-clamp-2">
-                            {item.trend.topComment}
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -456,15 +422,64 @@ export default function Home() {
           )}
         </div>
 
-        {/* Thread Output */}
-        <div>
-          {thread ? (
+                {/* Generate Button / Thread Output */}
+        <div className="flex flex-col min-w-0">
+          {!thread && trends.length > 0 ? (
+            <div className="sticky top-6">
+              {selectedTrend ? (
+                <div className="section text-center">
+                  <div className="text-2xl mb-2">✨</div>
+                  <div className="text-sm font-medium mb-1">Ready to generate!</div>
+                  <div className="text-xs opacity-80 mb-3 line-clamp-2 min-w-0">{selectedTrend.topic}</div>
+                  <div className="flex flex-col gap-2">
+                    <button 
+                      onClick={generate} 
+                      className="btn btn-primary w-full" 
+                      disabled={loadingThread}
+                    >
+                      {loadingThread ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Generating...
+                        </>
+                      ) : (
+                        "Generate Thread"
+                      )}
+                    </button>
+
+                  </div>
+                </div>
+              ) : (
+                <div className="section text-center">
+                  <div className="text-2xl mb-2">🎯</div>
+                  <div className="text-sm font-medium mb-1">Select a trend</div>
+                  <div className="text-xs opacity-80">Click on any trend to generate content</div>
+                </div>
+              )}
+            </div>
+          ) : thread ? (
             <section className="section">
               <div className="flex items-center justify-between gap-3 mb-4">
                 <h3 className="font-medium text-lg">Generated Thread</h3>
-                <button onClick={copyAll} className="text-xs underline opacity-80">
-                  Copy All
-                </button>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={remix} 
+                    className="btn" 
+                    disabled={loadingThread}
+                  >
+                    {loadingThread ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-[var(--muted)] border-t-[var(--fg)] rounded-full animate-spin"></div>
+                        Remixing...
+                      </>
+                    ) : (
+                      "Remix"
+                    )}
+                  </button>
+                  <button onClick={copyAll} className="text-xs underline opacity-80">
+                    Copy All
+                  </button>
+                </div>
               </div>
               
               <div className="space-y-4">
@@ -533,24 +548,9 @@ export default function Home() {
                     </div>
                   </div>
                 ) : null}
-              </div>
-            </section>
-          ) : selectedTrend && !loadingThread ? (
-            <div className="section text-center">
-              <div className="text-4xl mb-3">✨</div>
-              <div className="font-medium mb-1">Ready to generate!</div>
-              <div className="text-sm opacity-80 mb-4">Selected: {selectedTrend.topic}</div>
-              <button onClick={generate} className="btn btn-primary">
-                Generate Thread
-              </button>
-            </div>
-          ) : (
-            <div className="section text-center">
-              <div className="text-4xl mb-3">🎯</div>
-              <div className="font-medium mb-1">Select a trend to generate a thread</div>
-              <div className="text-sm opacity-80">Choose from the trending topics on the left</div>
-            </div>
-          )}
+                              </div>
+              </section>
+          ) : null}
         </div>
       </section>
 
