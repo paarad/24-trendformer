@@ -44,7 +44,10 @@
 		color: var(--primary-fg); 
 		border-color: var(--primary);
 	}
-	.btn-primary:hover { opacity: 0.9; }
+	.btn-primary:hover { 
+		background: rgba(0,0,0,0.8) !important; 
+		color: #ffffff !important; 
+	}
 
 	.input, .select { 
 		width: 100%; 
