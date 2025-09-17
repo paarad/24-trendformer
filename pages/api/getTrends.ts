@@ -123,7 +123,7 @@ function normalizeNiche(n: string | undefined): string | undefined {
 	return n.toLowerCase();
 }
 
-async function fetchExplodingTopics(_niche: string): Promise<Trend[]> {
+async function fetchExplodingTopics(): Promise<Trend[]> {
 	// Placeholder for real API integration
 	return [];
 }
@@ -331,7 +331,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			}
 			// fallback to ET if empty
 			if (trends.length === 0) {
-				trends = (await fetchExplodingTopics(niche)) || [];
+				trends = (await fetchExplodingTopics()) || [];
 			}
 		}
 		if (useMock || trends.length === 0) {

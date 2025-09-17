@@ -22,7 +22,7 @@ export type RankedTrend = {
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-function buildRankingPrompt(niche: string, trends: any[]): string {
+function buildRankingPrompt(niche: string, trends: Array<{topic: string; source: string; score?: number; body?: string; topComment?: string | null}>): string {
 	const trendsList = trends.map((t, i) => 
 		`${i}: "${t.topic}" (${t.source}, score: ${t.score || 'N/A'})\n   Context: ${(t.body || t.topComment || '').slice(0, 200)}...`
 	).join('\n\n');

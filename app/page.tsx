@@ -285,7 +285,7 @@ export default function Home() {
             <div className="section text-center">
               <div className="text-4xl mb-3">📈</div>
               <div className="font-medium mb-1">No trends loaded yet</div>
-              <div className="text-sm opacity-80">Configure your preferences and click "Fetch Trends"</div>
+              <div className="text-sm opacity-80">Configure your preferences and click &ldquo;Fetch Trends&rdquo;</div>
             </div>
           ) : (
             <div className="space-y-4 overflow-y-auto">
